@@ -20,7 +20,7 @@ from sklearn.decomposition import PCA
 #     - 147.32.87.11 (amount of bidirectional flows: 2, Label: MatLab-Server. This normal host is not so reliable since is a matlab server)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
-PACKET_COUNT = 50000
+PACKET_COUNT = 20000
 SLICE_WINDOW = 50
 
 def get_port(info_str:str):
@@ -104,7 +104,7 @@ def main():
     points = generate_PCA(entropy_dframe)
 
     plt.plot(points[0], points[1], 'o')
-    plt.savefig("test.png")
+    plt.savefig("pkt{}.png".format(PACKET_COUNT))
 
 if __name__ == "__main__":
     main()
