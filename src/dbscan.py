@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import pyshark
 import scipy.stats as scipy
 from sklearn.decomposition import PCA
+from argparse import ArgumentParser
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # - Infected hosts
@@ -19,9 +20,6 @@ from sklearn.decomposition import PCA
 #     - 147.32.80.9 (amount of bidirectional flows: 1, Label: CVUT-DNS-Server. This normal host is not so reliable since is a dns server)
 #     - 147.32.87.11 (amount of bidirectional flows: 2, Label: MatLab-Server. This normal host is not so reliable since is a matlab server)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-
-PACKET_COUNT = 20000
-SLICE_WINDOW = 50
 
 def get_port(info_str:str):
     infos = info_str.split(' ')
@@ -38,14 +36,27 @@ def get_port(info_str:str):
     
     return ports
 
-def capture_packages():
+def capture_packages(packet_count:int):
     pk_sh = pyshark.FileCapture('capture20110818-2.truncated.pcap', only_summaries=True)
-    pk_sh.load_packets(packet_count=PACKET_COUNT)
+    pk_sh.load_packets(packet_count=packet_count)
     dframe = pd.DataFrame(columns=['No', 'Time', 'Protocol', 'Source', 'Source_int', 'Destination', 'Destination_int', 'Length', "Source_Port", "Destination_Port", 'Info'])
     
     for index, packet in enumerate(pk_sh):
         ports = get_port(packet.info)
-        df_row_packet = pd.DataFrame({'No': [packet.no], 'Time': [packet.time], 'Protocol': [packet.protocol], 'Source': [packet.source], 'Source_int': [int(packet.source.replace(".",""))], 'Destination': [packet.destination], 'Destination_int': [int(packet.destination.replace(".",""))], 'Length': [int(packet.length)], "Source_Port": [ports[0]], "Destination_Port": [ports[1]], 'Info': [packet.info]})
+        df_row_packet = pd.DataFrame({
+            'No': [packet.no], 
+            'Time': [packet.time], 
+            'Protocol': [packet.protocol], 
+            'Source': [packet.source], 
+            'Source_int': [int(packet.source.replace(".",""))], 
+            'Destination': [packet.destination], 
+            'Destination_int': [int(packet.destination.replace(".",""))], 
+            'Length': [int(packet.length)], 
+            "Source_Port": [ports[0]], 
+            "Destination_Port": [ports[1]], 
+            'Info': [packet.info]
+            })
+
         dframe = pd.concat([dframe, df_row_packet], ignore_index=True, axis=0)
     
     print("Number of packages captured: ", len(pk_sh))
@@ -98,13 +109,18 @@ def generate_PCA(entropy_dframe):
     print(pca_points)
     return pca_points
 
-def main():
-    dframe = capture_packages()
-    entropy_dframe = entropy_dataframe(dframe, SLICE_WINDOW)
+def main(args):
+    dframe = capture_packages(args.packet_count)
+    entropy_dframe = entropy_dataframe(dframe, args.slice_window)
     points = generate_PCA(entropy_dframe)
 
     plt.plot(points[0], points[1], 'o')
-    plt.savefig("pkt{}.png".format(PACKET_COUNT))
+    plt.savefig("pkt{}.png".format(args.packet_count))
 
 if __name__ == "__main__":
-    main()
+    parser = ArgumentParser(description="Method Configuration")
+
+    parser.add_argument('--packet_count', type=int, default=10000, required=True)
+    parser.add_argument('--slice_window', type=int, default=50, required=True)
+    args = parser.parse_args
+    main(args)
