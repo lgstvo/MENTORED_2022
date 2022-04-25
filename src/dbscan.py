@@ -1,11 +1,12 @@
+import pyshark
+import argparse
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
-import pyshark
 import scipy.stats as scipy
+import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
-from argparse import ArgumentParser
+from generate_csv import *
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # - Infected hosts
@@ -36,8 +37,8 @@ def get_port(info_str:str):
     
     return ports
 
-def capture_packages(packet_count:int):
-    pk_sh = pyshark.FileCapture('capture20110818-2.truncated.pcap', only_summaries=True)
+def capture_packages(packet_count):
+    pk_sh = pyshark.FileCapture('data/capture/capture20110818-2.truncated.pcap', only_summaries=True)
     pk_sh.load_packets(packet_count=packet_count)
     dframe = pd.DataFrame(columns=['No', 'Time', 'Protocol', 'Source', 'Source_int', 'Destination', 'Destination_int', 'Length', "Source_Port", "Destination_Port", 'Info'])
     
@@ -88,16 +89,14 @@ def entropy_dataframe(dframe, slice_window):
     entropy_dframe = pd.DataFrame()
 
     slices =  list(range(0, len(dframe), slice_window))
-    print(slices)
     
     for initial_index in slices:
         ending_index = initial_index+slice_window-1
-        print("Calculating entropy of entrys {} to {}".format(initial_index, ending_index))
         dframe_slice = dframe[initial_index : ending_index]
         entropy_dframe_row = entropy_window(dframe_slice[["Source_int", "Destination_int", "Source_Port", "Destination_Port", "Length"]])
         entropy_dframe = pd.concat([entropy_dframe, entropy_dframe_row], ignore_index=True, axis=0)
 
-    print(entropy_dframe)
+    print(entropy_dframe.head())
     return entropy_dframe
 
 def generate_PCA(entropy_dframe):
@@ -106,7 +105,6 @@ def generate_PCA(entropy_dframe):
     pca = PCA(n_components = 2)
     pca.fit(entropy_dframe_numpy.transpose())
     pca_points = pca.components_
-    print(pca_points)
     return pca_points
 
 def main(args):
@@ -115,12 +113,14 @@ def main(args):
     points = generate_PCA(entropy_dframe)
 
     plt.plot(points[0], points[1], 'o')
-    plt.savefig("pkt{}.png".format(args.packet_count))
+    plt.savefig("data/img/pkt{}.png".format(args.packet_count))
 
 if __name__ == "__main__":
-    parser = ArgumentParser(description="Method Configuration")
+    parser = argparse.ArgumentParser(description="Method Configuration")
 
-    parser.add_argument('--packet_count', type=int, default=10000, required=True)
-    parser.add_argument('--slice_window', type=int, default=50, required=True)
-    args = parser.parse_args
+    parser.add_argument('--packet_count', type=int, default=10000)
+    parser.add_argument('--slice_window', type=int, default=50)
+    parser.add_argument('--file_name', default='data/capture/original/capture20110818-2.truncated.pcap')
+    parser.add_argument('--files_folder', default='.', help="Folder where multiple pcaps are located")
+    args = parser.parse_args()
     main(args)
