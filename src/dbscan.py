@@ -96,7 +96,7 @@ def entropy_dataframe(dframe, slice_window):
         entropy_dframe_row = entropy_window(dframe_slice[["Source_int", "Destination_int", "Source_Port", "Destination_Port", "Length"]])
         entropy_dframe = pd.concat([entropy_dframe, entropy_dframe_row], ignore_index=True, axis=0)
 
-    print(entropy_dframe.head())
+    #print(entropy_dframe.head())
     return entropy_dframe
 
 def generate_PCA(entropy_dframe):
@@ -105,15 +105,27 @@ def generate_PCA(entropy_dframe):
     pca = PCA(n_components = 2)
     pca.fit(entropy_dframe_numpy.transpose())
     pca_points = pca.components_
+    print(pca_points)
     return pca_points
 
+def fetch_package_csv():
+    csv1 =  pd.read_csv("packets_csv.csv")
+    csv2 =  pd.read_csv("packets_csv2.csv")
+    csv3 =  pd.read_csv("packets_csv3.csv")
+    full_csv =  pd.concat([csv1, csv2, csv3], ignore_index=True, axis=0)
+    full_csv = full_csv.drop(labels="Unnamed: 0", axis=1)
+    return full_csv
+
 def main(args):
-    dframe = capture_packages(args.packet_count)
+    if args.presaved == True:
+        dframe = capture_packages(args.packet_count)
+    else:
+        dframe = fetch_package_csv()
     entropy_dframe = entropy_dataframe(dframe, args.slice_window)
     points = generate_PCA(entropy_dframe)
 
     plt.plot(points[0], points[1], 'o')
-    plt.savefig("data/img/pkt{}.png".format(args.packet_count))
+    plt.savefig("../data/img/pkt{}.png".format(args.packet_count))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Method Configuration")
@@ -122,5 +134,6 @@ if __name__ == "__main__":
     parser.add_argument('--slice_window', type=int, default=50)
     parser.add_argument('--file_name', default='data/capture/original/capture20110818-2.truncated.pcap')
     parser.add_argument('--files_folder', default='.', help="Folder where multiple pcaps are located")
+    parser.add_argument('--presaved', default=False)
     args = parser.parse_args()
     main(args)
