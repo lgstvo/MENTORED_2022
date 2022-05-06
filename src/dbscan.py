@@ -6,7 +6,6 @@ import seaborn as sns
 import scipy.stats as scipy
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
-from generate_csv import *
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # - Infected hosts
@@ -21,6 +20,10 @@ from generate_csv import *
 #     - 147.32.80.9 (amount of bidirectional flows: 1, Label: CVUT-DNS-Server. This normal host is not so reliable since is a dns server)
 #     - 147.32.87.11 (amount of bidirectional flows: 2, Label: MatLab-Server. This normal host is not so reliable since is a matlab server)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+BOTNET1 = "147.32.84.165"
+BOTNET2 = "147.32.84.191"
+BOTNET3 = "147.32.84.192"
 
 def get_port(info_str:str):
     infos = info_str.split(' ')
@@ -84,28 +87,43 @@ def entropy_window(dframe_slice):
     #print(entropy_dframe_row)
     return entropy_dframe_row
 
+def check_botnet(ip, botnets):
+    ip_is_infected = 0
+    for infected_host in botnets:
+        ip_is_infected = ip == infected_host
+        if ip_is_infected:
+            return True
+    return False
+
+def check_infection(dframe_slice):
+    for ip in dframe_slice["Source"]:
+        ip_is_infected = check_botnet(ip, [BOTNET1, BOTNET2, BOTNET3])
+        if ip_is_infected:
+            return True
+    return False
+
 def entropy_dataframe(dframe, slice_window):
     # generate new dataframe with values gruped by entropy, to be processed by PCA
     entropy_dframe = pd.DataFrame()
 
     slices =  list(range(0, len(dframe), slice_window))
-    
     for initial_index in slices:
         ending_index = initial_index+slice_window-1
         dframe_slice = dframe[initial_index : ending_index]
+        is_infected = check_infection(dframe_slice)
         entropy_dframe_row = entropy_window(dframe_slice[["Source_int", "Destination_int", "Source_Port", "Destination_Port", "Length"]])
+        entropy_dframe_row["Infected"] = is_infected
         entropy_dframe = pd.concat([entropy_dframe, entropy_dframe_row], ignore_index=True, axis=0)
 
-    #print(entropy_dframe.head())
     return entropy_dframe
 
 def generate_PCA(entropy_dframe):
     # creates PCA points for the data
-    entropy_dframe_numpy = entropy_dframe.to_numpy()
+    entropy_dframe_numpy = entropy_dframe.loc[:, entropy_dframe.columns!='Infected'].to_numpy()
     pca = PCA(n_components = 2)
     pca.fit(entropy_dframe_numpy.transpose())
     pca_points = pca.components_
-    print(pca_points)
+    pca_points = np.vstack([pca_points, entropy_dframe.loc[:, entropy_dframe.columns=='Infected'].to_numpy().transpose()])
     return pca_points
 
 def fetch_package_csv():
@@ -116,16 +134,23 @@ def fetch_package_csv():
     full_csv = full_csv.drop(labels="Unnamed: 0", axis=1)
     return full_csv
 
+def generate_plot(filename, points):
+    colors = ['blue', 'red']
+    print(points)
+    plt.scatter(points[0], points[1], c=points[2])
+    plt.savefig(filename)
+
 def main(args):
-    if args.presaved == True:
-        dframe = capture_packages(args.packet_count)
-    else:
+    if args.presaved:
+        savefigure_path = "../data/img/pktAll_windowSize{}.png".format(args.slice_window)
         dframe = fetch_package_csv()
+    else:
+        savefigure_path = "../data/img/pkt{}_windowSize{}.png".format(args.packet_count, args.slice_window)
+        dframe = capture_packages(args.packet_count)
     entropy_dframe = entropy_dataframe(dframe, args.slice_window)
     points = generate_PCA(entropy_dframe)
 
-    plt.plot(points[0], points[1], 'o')
-    plt.savefig("../data/img/pkt{}.png".format(args.packet_count))
+    generate_plot(savefigure_path, points)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Method Configuration")
@@ -134,6 +159,6 @@ if __name__ == "__main__":
     parser.add_argument('--slice_window', type=int, default=50)
     parser.add_argument('--file_name', default='data/capture/original/capture20110818-2.truncated.pcap')
     parser.add_argument('--files_folder', default='.', help="Folder where multiple pcaps are located")
-    parser.add_argument('--presaved', default=False)
+    parser.add_argument('--presaved', default=False, type=bool)
     args = parser.parse_args()
     main(args)
