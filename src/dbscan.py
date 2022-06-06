@@ -3,6 +3,7 @@ import argparse
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from math import floor
 import scipy.stats as scipy
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
@@ -147,6 +148,14 @@ def main(args):
     else:
         savefigure_path = "../data/img/pkt{}_windowSize{}.png".format(args.packet_count, args.slice_window)
         dframe = capture_packages(args.packet_count)
+
+    if args.time_cut != -1:
+        packets_per_second = floor(len(dframe)/973)
+        print(packets_per_second)
+        cut_capture = packets_per_second*args.time_cut
+        savefigure_path = "../data/img/pkt{}_windowSize{}.png".format(cut_capture, args.slice_window)
+        dframe = dframe[0:cut_capture]
+    
     entropy_dframe = entropy_dataframe(dframe, args.slice_window)
     points = generate_PCA(entropy_dframe)
 
@@ -160,5 +169,6 @@ if __name__ == "__main__":
     parser.add_argument('--file_name', default='data/capture/original/capture20110818-2.truncated.pcap')
     parser.add_argument('--files_folder', default='.', help="Folder where multiple pcaps are located")
     parser.add_argument('--presaved', default=False, type=bool)
+    parser.add_argument('--time_cut', type=int, default=-1)
     args = parser.parse_args()
     main(args)
