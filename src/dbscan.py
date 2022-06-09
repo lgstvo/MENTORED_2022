@@ -9,6 +9,42 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# CAPTURE 45
+# - Infected hosts
+#     - 147.32.84.165: Windows XP (English version) Name: SARUMAN (Label: Botnet) (amount of infected flows: 5160)
+# - Normal hosts:
+#     - 147.32.84.170 (amount of bidirectional flows: 12133, Label: Normal-V42-Stribrek)
+#     - 147.32.84.134 (amount of bidirectional flows: 10382, Label: Normal-V42-Jist)
+#     - 147.32.84.164 (amount of bidirectional flows: 2474, Label: Normal-V42-Grill)
+#     - 147.32.87.36 (amount of bidirectional flows: 89, Label: CVUT-WebServer. This normal host is not so reliable since is a webserver)
+#     - 147.32.80.9 (amount of bidirectional flows: 13, Label: CVUT-DNS-Server. This normal host is not so reliable since is a dns server)
+#     - 147.32.87.11 (amount of bidirectional flows: 4, Label: MatLab-Server. This normal host is not so reliable since is a matlab server)
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# CAPTURE 51
+# - Infected hosts
+#     - 147.32.84.165: Windows XP English version Name: SARUMAN. Label: Botnet. Amount of bidirectional flows: 9579
+#     - 147.32.84.191: Windows XP English version Name: SARUMAN1. Label: Botnet. Amount of bidirectional flows: 10454
+#     - 147.32.84.192: Windows XP English version Name: SARUMAN2. Label: Botnet. Amount of bidirectional flows: 10397
+#     - 147.32.84.193: Windows XP English version Name: SARUMAN3. Label: Botnet. Amount of bidirectional flows: 10009
+#     - 147.32.84.204: Windows XP English version Name: SARUMAN4. Label: Botnet. Amount of bidirectional flows: 11159
+#     - 147.32.84.205: Windows XP English version Name: SARUMAN5. Label: Botnet. Amount of bidirectional flows: 11874
+#     - 147.32.84.206: Windows XP English version Name: SARUMAN6. Label: Botnet. Amount of bidirectional flows: 11287
+#     - 147.32.84.207: Windows XP English version Name: SARUMAN7. Label: Botnet. Amount of bidirectional flows: 10581
+#     - 147.32.84.208: Windows XP English version Name: SARUMAN8. Label: Botnet. Amount of bidirectional flows: 11118
+#     - 147.32.84.209: Windows XP English version Name: SARUMAN9. Label: Botnet. Amount of bidirectional flows: 9894
+# - Normal hosts:
+#     - 147.32.84.170 (amount of bidirectional flows: 10216, Label: Normal-V42-Stribrek)
+#     - 147.32.84.134 (amount of bidirectional flows: 1091, Label: Normal-V42-Jist)
+#     - 147.32.84.164 (amount of bidirectional flows: 3728, Label: Normal-V42-Grill)
+#     - 147.32.87.36 (amount of bidirectional flows: 99, Label: CVUT-WebServer. This normal host is not so reliable since is a webserver)
+#     - 147.32.80.9 (amount of bidirectional flows: 651, Label: CVUT-DNS-Server. This normal host is not so reliable since is a dns server)
+#     - 147.32.87.11 (amount of bidirectional flows: 4, Label: MatLab-Server. This normal host is not so reliable since is a matlab server)
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# CAPTURE 52
 # - Infected hosts
 #     - 147.32.84.165: Windows XP English version Name: SARUMAN. Label: Botnet. Amount of bidirectional flows: 4151
 #     - 147.32.84.191: Windows XP English version Name: SARUMAN1. Label: Botnet. Amount of bidirectional flows: 4006
@@ -22,9 +58,22 @@ from sklearn.decomposition import PCA
 #     - 147.32.87.11 (amount of bidirectional flows: 2, Label: MatLab-Server. This normal host is not so reliable since is a matlab server)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
-BOTNET1 = "147.32.84.165"
-BOTNET2 = "147.32.84.191"
-BOTNET3 = "147.32.84.192"
+INFECTED_HOSTS_C45 = ["147.32.84.165"]
+
+INFECTED_HOSTS_C51 = [
+    "147.32.84.165",
+    "147.32.84.191",
+    "147.32.84.192",
+    "147.32.84.193",
+    "147.32.84.204",
+    "147.32.84.205",
+    "147.32.84.206",
+    "147.32.84.207",
+    "147.32.84.208",
+    "147.32.84.209"
+]
+
+INFECTED_HOSTS_C52 = ["147.32.84.165", "147.32.84.191", "147.32.84.192"]
 
 def get_port(info_str:str):
     infos = info_str.split(' ')
@@ -96,14 +145,25 @@ def check_botnet(ip, botnets):
             return True
     return False
 
-def check_infection(dframe_slice):
+def check_infection(dframe_slice, infected_hosts):
     for ip in dframe_slice["Source"]:
-        ip_is_infected = check_botnet(ip, [BOTNET1, BOTNET2, BOTNET3])
+        ip_is_infected = check_botnet(ip, infected_hosts)
         if ip_is_infected:
             return True
     return False
 
-def entropy_dataframe(dframe, slice_window):
+def check_infected_hosts(dataset):
+    if dataset == "ctu13c52":
+        infected_hosts = INFECTED_HOSTS_C52
+    elif dataset == "ctu13c51":
+        infected_hosts = INFECTED_HOSTS_C51
+    elif dataset == "ctu13c45":
+        infected_hosts = INFECTED_HOSTS_C45
+    else:
+        infected_hosts = []
+    return infected_hosts
+
+def entropy_dataframe(dframe, slice_window, dataset):
     # generate new dataframe with values gruped by entropy, to be processed by PCA
     entropy_dframe = pd.DataFrame()
 
@@ -111,7 +171,8 @@ def entropy_dataframe(dframe, slice_window):
     for initial_index in slices:
         ending_index = initial_index+slice_window-1
         dframe_slice = dframe[initial_index : ending_index]
-        is_infected = check_infection(dframe_slice)
+        infected_hosts = check_infected_hosts(dataset)
+        is_infected = check_infection(dframe_slice, infected_hosts)
         entropy_dframe_row = entropy_window(dframe_slice[["Source_int", "Destination_int", "Source_Port", "Destination_Port", "Length"]])
         entropy_dframe_row["Infected"] = is_infected
         entropy_dframe = pd.concat([entropy_dframe, entropy_dframe_row], ignore_index=True, axis=0)
@@ -156,7 +217,7 @@ def main(args):
         savefigure_path = "../data/img/pkt{}_windowSize{}.png".format(cut_capture, args.slice_window)
         dframe = dframe[0:cut_capture]
     
-    entropy_dframe = entropy_dataframe(dframe, args.slice_window)
+    entropy_dframe = entropy_dataframe(dframe, args.slice_window, args.dataset)
     points = generate_PCA(entropy_dframe)
 
     generate_plot(savefigure_path, points)
@@ -170,5 +231,6 @@ if __name__ == "__main__":
     parser.add_argument('--files_folder', default='.', help="Folder where multiple pcaps are located")
     parser.add_argument('--presaved', default=False, type=bool)
     parser.add_argument('--time_cut', type=int, default=-1)
+    parser.add_argument('--dataset', type=str, default="ctu13c52")
     args = parser.parse_args()
     main(args)
