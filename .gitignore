@@ -1,2 +1,4 @@
-data/capture
+data/capture45/*.pcap
+data/capture51/*.pcap
 *.csv
+*pcap
