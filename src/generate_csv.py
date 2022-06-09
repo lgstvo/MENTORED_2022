@@ -4,6 +4,7 @@ from unittest import skip
 import pyshark
 import pandas as pd
 import os
+import argparse
 
 def get_port(info_str:str):
     infos = info_str.split(' ')
@@ -51,12 +52,17 @@ def main():
     return 0
 
 if __name__ == "__main__":
-    packages_folder = "../data/capture"
+    parser = argparse.ArgumentParser(description="Method Configuration")
+
+    parser.add_argument('--folder', type=str, default="capture45")
+    args = parser.parse_args()
+    packages_folder = "../data/"+args.folder
     dframe = pd.DataFrame(columns=['Protocol', 'Source', 'Source_int', 'Destination', 'Destination_int', 'Length', "Source_Port", "Destination_Port", 'Info'])
     file_number = 0
-    for file in os.listdir(packages_folder):
+    sorted_files = sorted(os.listdir(packages_folder))
+    for file in sorted_files:
         if file.endswith(".pcap"):
-            if file_number < 55:
+            if file_number < 0:
                 file_number += 1
                 continue
             print(file)
@@ -65,6 +71,6 @@ if __name__ == "__main__":
 
             dframe = pd.concat([dframe, dframe_batch], ignore_index=True, axis=0)
             print(len(dframe))
-            dframe.to_csv("packets_csv3.csv")
+            dframe.to_csv("{}_packets_csv1.csv".format(args.folder))
         
     print(dframe.head())
