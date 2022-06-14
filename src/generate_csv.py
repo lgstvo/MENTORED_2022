@@ -62,7 +62,7 @@ if __name__ == "__main__":
     sorted_files = sorted(os.listdir(packages_folder))
     for file in sorted_files:
         if file.endswith(".pcap"):
-            if file_number < 207:
+            if file_number < 311:
                 file_number += 1
                 continue
             print(file)
@@ -71,6 +71,6 @@ if __name__ == "__main__":
 
             dframe = pd.concat([dframe, dframe_batch], ignore_index=True, axis=0)
             print(len(dframe))
-            dframe.to_csv("{}_packets_csv2.csv".format(args.folder))
+            dframe.to_csv("{}_packets_csv4.csv".format(args.folder))
         
     print(dframe.head())
