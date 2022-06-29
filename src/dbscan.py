@@ -212,27 +212,39 @@ def padronize_inputs(args):
     if args.image_save_folder[-1] != '/':
         args.image_save_folder += '/'
 
+    if args.presaved_entropy != '':
+        capture_dataset = args.presaved_entropy.split('/')[1]
+        args.presaved_entropy += 'window{}/entropy_{}_window{}.csv'.format(args.slice_window, capture_dataset, args.slice_window)
+
     return args
 
 def main(args):
-    if not args.use_raw:
-        savefigure_path = args.image_save_folder+"{}_pktAll_windowSize{}.png".format(args.dataset, args.slice_window)
-        dframe = fetch_package_csv(args.presaved_packets)
-    else:
-        savefigure_path = args.image_save_folder+"{}_pkt{}_windowSize{}.png".format(args.dataset, args.packet_count, args.slice_window)
-        dframe = capture_packages(args.pcap_file_name, args.packet_count)
-
-    if args.time_cut != -1:
-        packets_per_second = floor(len(dframe)/973)
-        print(packets_per_second)
-        cut_capture = packets_per_second*args.time_cut
-        savefigure_path = args.image_save_folder+"{}_pkt{}_windowSize{}.png".format(args.dataset, cut_capture, args.slice_window)
-        dframe = dframe[0:cut_capture]
     
     if args.presaved_entropy == '':
-        entropy_dframe = entropy_dataframe(dframe, args.slice_window, args.dataset)
+        if not args.use_raw:
+            savefigure_path = args.image_save_folder+"{}_pktAll_windowSize{}.png".format(args.dataset, args.slice_window)
+            dframe = fetch_package_csv(args.presaved_packets)
+        else:
+            savefigure_path = args.image_save_folder+"{}_pkt{}_windowSize{}.png".format(args.dataset, args.packet_count, args.slice_window)
+            dframe = capture_packages(args.pcap_file_name, args.packet_count)
+
+        if args.time_cut != -1:
+            packets_per_second = floor(len(dframe)/973)
+            print(packets_per_second)
+            cut_capture = packets_per_second*args.time_cut
+            savefigure_path = args.image_save_folder+"{}_pkt{}_windowSize{}.png".format(args.dataset, cut_capture, args.slice_window)
+            dframe = dframe[0:cut_capture]
+            entropy_dframe = entropy_dataframe(dframe, args.slice_window, args.dataset)
     else:
+        savefigure_path = args.image_save_folder+"{}_pktAll_windowSize{}.png".format(args.dataset, args.slice_window)
         entropy_dframe = pd.read_csv(args.presaved_entropy)
+        if args.time_cut != -1:
+            packets_per_second = 4095
+            cut_capture = packets_per_second*args.time_cut
+            savefigure_path = args.image_save_folder+"{}_pkt{}_windowSize{}.png".format(args.dataset, cut_capture, args.slice_window)
+            cut_capture = cut_capture//args.slice_window
+            entropy_dframe = entropy_dframe[0:cut_capture]
+        
     points = generate_PCA(entropy_dframe)
 
     generate_plot(savefigure_path, points)
@@ -244,7 +256,7 @@ if __name__ == "__main__":
     parser.add_argument('--use_raw', type=bool, default=False, help="Uses raw pcap for capture")
     parser.add_argument('--slice_window', type=int, default=50)
     parser.add_argument('--pcap_file_name', type=str, default='data/capture/original/capture20110818-2.truncated.pcap')
-    parser.add_argument('--presaved_packets', type=str, default="../data/capture52/csvs/packets/")
+    parser.add_argument('--presaved_packets', type=str, default="data/capture52/csvs/packets/")
     parser.add_argument('--time_cut', type=int, default=-1, help="In which second should the analisys stop. -1 equals full capture")
     parser.add_argument('--dataset', type=str, default="ctu13c52", help="Currently supported data: ctu13c52, ctu13c45, ctu13c51")
     parser.add_argument('--presaved_entropy', type=str, default='')
