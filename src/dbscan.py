@@ -204,21 +204,24 @@ def generate_plot(filename, points):
 
 def main(args):
     if args.presaved:
-        savefigure_path = "../data/img/pktAll_windowSize{}.png".format(args.slice_window)
+        savefigure_path = "../data/img/{}_pktAll_windowSize{}.png".format(args.dataset, args.slice_window)
         dframe = fetch_package_csv()
     else:
-        savefigure_path = "../data/img/pkt{}_windowSize{}.png".format(args.packet_count, args.slice_window)
+        savefigure_path = "../data/img/{}_pkt{}_windowSize{}.png".format(args.dataset, args.packet_count, args.slice_window)
         dframe = capture_packages(args.packet_count)
 
     if args.time_cut != -1:
         packets_per_second = floor(len(dframe)/973)
         print(packets_per_second)
         cut_capture = packets_per_second*args.time_cut
-        savefigure_path = "../data/img/pkt{}_windowSize{}.png".format(cut_capture, args.slice_window)
+        savefigure_path = "../data/img/{}_pkt{}_windowSize{}.png".format(args.dataset, cut_capture, args.slice_window)
         dframe = dframe[0:cut_capture]
     
-    entropy_dframe = entropy_dataframe(dframe, args.slice_window, args.dataset)
-    points = generate_PCA(entropy_dframe)
+    if args.presaved_entropy == '':
+        entropy_dframe = entropy_dataframe(dframe, args.slice_window, args.dataset)
+    else:
+        entropy_dframe = pd.read_csv(args.presaved_entropy)
+    points = generate_PCA(entropy_dframe[13458:20816])
 
     generate_plot(savefigure_path, points)
 
@@ -232,5 +235,6 @@ if __name__ == "__main__":
     parser.add_argument('--presaved', default=False, type=bool)
     parser.add_argument('--time_cut', type=int, default=-1)
     parser.add_argument('--dataset', type=str, default="ctu13c52")
+    parser.add_argument('--presaved_entropy', type=str, default='')
     args = parser.parse_args()
     main(args)
