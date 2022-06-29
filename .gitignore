@@ -1,4 +1,8 @@
 data/capture45/*.pcap
 data/capture51/*.pcap
+
+src/__pycache__/*
+
 *.csv
-*pcap
+*.pcap
+*.txt
