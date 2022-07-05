@@ -239,11 +239,13 @@ def main(args):
         savefigure_path = args.image_save_folder+"{}_pktAll_windowSize{}.png".format(args.dataset, args.slice_window)
         entropy_dframe = pd.read_csv(args.presaved_entropy)
         if args.time_cut != -1:
-            packets_per_second = 4095
-            cut_capture = packets_per_second*args.time_cut
-            savefigure_path = args.image_save_folder+"{}_pkt{}_windowSize{}.png".format(args.dataset, cut_capture, args.slice_window)
-            cut_capture = cut_capture//args.slice_window
-            entropy_dframe = entropy_dframe[0:cut_capture]
+            packets_per_second = 2643
+            cut_capture = packets_per_second*args.time_cut//args.slice_window
+            start_capture = packets_per_second*args.time_startpoint//args.slice_window
+            print(start_capture)
+            timestamp_string = "start{}_end{}_".format(args.time_startpoint, args.time_cut)
+            savefigure_path = args.image_save_folder+"{}_{}pkt{}_windowSize{}.png".format(args.dataset, timestamp_string, cut_capture, args.slice_window)
+            entropy_dframe = entropy_dframe[start_capture:cut_capture]
         
     points = generate_PCA(entropy_dframe)
 
@@ -258,6 +260,7 @@ if __name__ == "__main__":
     parser.add_argument('--pcap_file_name', type=str, default='data/capture/original/capture20110818-2.truncated.pcap')
     parser.add_argument('--presaved_packets', type=str, default="data/capture52/csvs/packets/")
     parser.add_argument('--time_cut', type=int, default=-1, help="In which second should the analisys stop. -1 equals full capture")
+    parser.add_argument('--time_startpoint', type=int, default=0)
     parser.add_argument('--dataset', type=str, default="ctu13c52", help="Currently supported data: ctu13c52, ctu13c45, ctu13c51")
     parser.add_argument('--presaved_entropy', type=str, default='')
     parser.add_argument('--image_save_folder', type=str, default="data/img/")
