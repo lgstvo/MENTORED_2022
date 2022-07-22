@@ -2,7 +2,7 @@ data/capture45/*.pcap
 data/capture51/*.pcap
 
 src/__pycache__/*
-
+data/img/*
 *.csv
 *.pcap
 *.txt
