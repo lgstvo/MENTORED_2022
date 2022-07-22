@@ -1,3 +1,4 @@
+import os
 import pyshark
 import argparse
 import numpy as np
@@ -90,8 +91,8 @@ def get_port(info_str:str):
     
     return ports
 
-def capture_packages(packet_count):
-    pk_sh = pyshark.FileCapture('data/capture/capture20110818-2.truncated.pcap', only_summaries=True)
+def capture_packages(pcap_file_name, packet_count):
+    pk_sh = pyshark.FileCapture(pcap_file_name, only_summaries=True)
     pk_sh.load_packets(packet_count=packet_count)
     dframe = pd.DataFrame(columns=['No', 'Time', 'Protocol', 'Source', 'Source_int', 'Destination', 'Destination_int', 'Length', "Source_Port", "Destination_Port", 'Info'])
     
@@ -188,13 +189,17 @@ def generate_PCA(entropy_dframe):
     pca_points = np.vstack([pca_points, entropy_dframe.loc[:, entropy_dframe.columns=='Infected'].to_numpy().transpose()])
     return pca_points
 
-def fetch_package_csv():
-    csv1 =  pd.read_csv("packets_csv.csv")
-    csv2 =  pd.read_csv("packets_csv2.csv")
-    csv3 =  pd.read_csv("packets_csv3.csv")
-    full_csv =  pd.concat([csv1, csv2, csv3], ignore_index=True, axis=0)
-    full_csv = full_csv.drop(labels="Unnamed: 0", axis=1)
-    return full_csv
+def fetch_package_csv(presaved_packets):
+    list_csvs = sorted(os.listdir(presaved_packets))
+    dframe = pd.DataFrame(columns=['Protocol', 'Source', 'Source_int', 'Destination', 'Destination_int', 'Length', "Source_Port", "Destination_Port", 'Info'])
+    for packet_file in list_csvs:
+        print("Processing {}...".format(packet_file))
+        fraction_csv = pd.read_csv(os.path.join(presaved_packets, packet_file))
+
+        dframe =  pd.concat([dframe, fraction_csv], ignore_index=True, axis=0)
+    dframe = dframe.drop(labels="Unnamed: 0", axis=1)
+    print("Fetching complete.")
+    return dframe
 
 def generate_plot(filename, points):
     colors = ['blue', 'red']
@@ -202,26 +207,47 @@ def generate_plot(filename, points):
     plt.scatter(points[0], points[1], c=points[2])
     plt.savefig(filename)
 
-def main(args):
-    if args.presaved:
-        savefigure_path = "../data/img/{}_pktAll_windowSize{}.png".format(args.dataset, args.slice_window)
-        dframe = fetch_package_csv()
-    else:
-        savefigure_path = "../data/img/{}_pkt{}_windowSize{}.png".format(args.dataset, args.packet_count, args.slice_window)
-        dframe = capture_packages(args.packet_count)
+def padronize_inputs(args):
 
-    if args.time_cut != -1:
-        packets_per_second = floor(len(dframe)/973)
-        print(packets_per_second)
-        cut_capture = packets_per_second*args.time_cut
-        savefigure_path = "../data/img/{}_pkt{}_windowSize{}.png".format(args.dataset, cut_capture, args.slice_window)
-        dframe = dframe[0:cut_capture]
+    if args.image_save_folder[-1] != '/':
+        args.image_save_folder += '/'
+
+    if args.presaved_entropy != '':
+        capture_dataset = args.presaved_entropy.split('/')[1]
+        args.presaved_entropy += 'window{}/entropy_{}_window{}.csv'.format(args.slice_window, capture_dataset, args.slice_window)
+
+    return args
+
+def main(args):
     
     if args.presaved_entropy == '':
-        entropy_dframe = entropy_dataframe(dframe, args.slice_window, args.dataset)
+        if not args.use_raw:
+            savefigure_path = args.image_save_folder+"{}_pktAll_windowSize{}.png".format(args.dataset, args.slice_window)
+            dframe = fetch_package_csv(args.presaved_packets)
+        else:
+            savefigure_path = args.image_save_folder+"{}_pkt{}_windowSize{}.png".format(args.dataset, args.packet_count, args.slice_window)
+            dframe = capture_packages(args.pcap_file_name, args.packet_count)
+
+        if args.time_cut != -1:
+            packets_per_second = floor(len(dframe)/973)
+            print(packets_per_second)
+            cut_capture = packets_per_second*args.time_cut
+            savefigure_path = args.image_save_folder+"{}_pkt{}_windowSize{}.png".format(args.dataset, cut_capture, args.slice_window)
+            dframe = dframe[0:cut_capture]
+            entropy_dframe = entropy_dataframe(dframe, args.slice_window, args.dataset)
     else:
+        savefigure_path = args.image_save_folder+"{}_pktAll_windowSize{}.png".format(args.dataset, args.slice_window)
         entropy_dframe = pd.read_csv(args.presaved_entropy)
-    points = generate_PCA(entropy_dframe[13458:20816])
+        if args.time_cut != -1:
+            packets_per_second = 2643
+            cut_capture = packets_per_second*args.time_cut//args.slice_window
+            start_capture = packets_per_second*args.time_startpoint//args.slice_window
+            print(start_capture)
+            timestamp_string = "start{}_end{}_".format(args.time_startpoint, args.time_cut)
+            savefigure_path = args.image_save_folder+"{}_{}pkt{}_windowSize{}.png".format(args.dataset, timestamp_string, cut_capture, args.slice_window)
+            entropy_dframe = entropy_dframe[start_capture:cut_capture]
+        
+    points = generate_PCA(entropy_dframe)
 
     generate_plot(savefigure_path, points)
 
@@ -229,12 +255,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Method Configuration")
 
     parser.add_argument('--packet_count', type=int, default=10000)
+    parser.add_argument('--use_raw', type=bool, default=False, help="Uses raw pcap for capture")
     parser.add_argument('--slice_window', type=int, default=50)
-    parser.add_argument('--file_name', default='data/capture/original/capture20110818-2.truncated.pcap')
-    parser.add_argument('--files_folder', default='.', help="Folder where multiple pcaps are located")
-    parser.add_argument('--presaved', default=False, type=bool)
-    parser.add_argument('--time_cut', type=int, default=-1)
-    parser.add_argument('--dataset', type=str, default="ctu13c52")
+    parser.add_argument('--pcap_file_name', type=str, default='data/capture/original/capture20110818-2.truncated.pcap')
+    parser.add_argument('--presaved_packets', type=str, default="data/capture52/csvs/packets/")
+    parser.add_argument('--time_cut', type=int, default=-1, help="In which second should the analisys stop. -1 equals full capture")
+    parser.add_argument('--time_startpoint', type=int, default=0)
+    parser.add_argument('--dataset', type=str, default="ctu13c52", help="Currently supported data: ctu13c52, ctu13c45, ctu13c51")
     parser.add_argument('--presaved_entropy', type=str, default='')
+    parser.add_argument('--image_save_folder', type=str, default="data/img/")
     args = parser.parse_args()
+    args = padronize_inputs(args)
+    print(args)
     main(args)
