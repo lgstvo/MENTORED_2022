@@ -139,7 +139,6 @@ def entropy_window(dframe_slice):
     }
     entropy_dframe_row = pd.DataFrame(dframe_model)
     
-    #print(entropy_dframe_row)
     return entropy_dframe_row
 
 def check_botnet(ip, botnets):
@@ -188,7 +187,6 @@ def generate_PCA(entropy_dframe):
     # creates PCA points for the data
     entropy_dframe_numpy = entropy_dframe.loc[:, entropy_dframe.columns!='Infected'].to_numpy()
     pca = PCA(n_components = 2)
-    print(entropy_dframe_numpy)
     pca.fit(entropy_dframe_numpy.transpose())
     pca_points = pca.components_
     pca_points = np.vstack([pca_points, entropy_dframe.loc[:, entropy_dframe.columns=='Infected'].to_numpy().transpose()])
@@ -208,7 +206,6 @@ def fetch_package_csv(presaved_packets):
 
 def generate_plot(filename, points):
     colors = ['blue', 'red']
-    print(points)
     plt.scatter(points[0], points[1], c=points[2])
     plt.savefig(filename)
 
@@ -223,44 +220,42 @@ def padronize_inputs(args):
 
     return args
 
+def separate_time(pps, start, end, window, entropy_dframe):
+    start_capture = pps*start//window
+    cut_capture = pps*end//window
+    entropy_dframe = entropy_dframe[start_capture:cut_capture]
+    return entropy_dframe
+
 def main(args):
-    
+    savefigure_path = args.dataset
     if args.presaved_entropy == '':
         if not args.use_raw:
-            savefigure_path = args.image_save_folder+"{}_pktAll_windowSize{}.png".format(args.dataset, args.slice_window)
             dframe = fetch_package_csv(args.presaved_packets)
         else:
-            savefigure_path = args.image_save_folder+"{}_pkt{}_windowSize{}.png".format(args.dataset, args.packet_count, args.slice_window)
+            savefigure_path = savefigure_path+"_pkt{}".format(args.packet_count)
             dframe = capture_packages(args.pcap_file_name, args.packet_count)
 
-        if args.time_cut != -1:
-            packets_per_second = floor(len(dframe)/973)
-            print(packets_per_second)
-            cut_capture = packets_per_second*args.time_cut
-            start_capture = packets_per_second*args.time_startpoint//args.slice_window
-            timestamp_string = "start{}_end{}_".format(args.time_startpoint, args.time_cut)
-            savefigure_path = args.image_save_folder+"{}_{}pkt{}_windowSize{}.png".format(args.dataset, timestamp_string, cut_capture, args.slice_window)
-            dframe = dframe[start_capture:cut_capture]
         entropy_dframe = entropy_dataframe(dframe, args.slice_window, args.dataset)
     else:
-        savefigure_path = args.image_save_folder+"{}_pktAll_windowSize{}".format(args.dataset, args.slice_window)
-        if args.new_entropy == True:
-            savefigure_path = savefigure_path+"new_entropy.png"
-            print(args.new_entropy)
-        else:
-            savefigure_path = savefigure_path+".png"
         entropy_dframe = pd.read_csv(args.presaved_entropy)
-        if args.time_cut != -1:
-            packets_per_second = 2460
-            cut_capture = packets_per_second*args.time_cut//args.slice_window
-            start_capture = packets_per_second*args.time_startpoint//args.slice_window
-            print(start_capture)
-            timestamp_string = "start{}_end{}_".format(args.time_startpoint, args.time_cut)
-            savefigure_path = args.image_save_folder+"{}_{}pkt{}_windowSize{}.png".format(args.dataset, timestamp_string, cut_capture, args.slice_window)
-            entropy_dframe = entropy_dframe[start_capture:cut_capture]
-        
-    points = generate_PCA(entropy_dframe)
 
+    if args.time_cut != -1:
+        savefigure_path = savefigure_path+"_start{}_end{}".format(args.time_startpoint, args.time_cut)
+        entropy_dframe = separate_time(2460, args.time_startpoint, args.time_cut, args.slice_window. entropy_dframe)
+    else:
+        savefigure_path = savefigure_path+"_pktAll"
+        
+    savefigure_path = savefigure_path+"_windowSize{}".format(args.slice_window)
+    if args.drop_port == True:
+        entropy_dframe = entropy_dframe.drop(['Destination_Port', 'Source_Port'], axis=1)
+        savefigure_path = savefigure_path + "_dropport"
+    points = generate_PCA(entropy_dframe)
+    if args.new_entropy == True:
+        savefigure_path = savefigure_path+"_new_entropy.png"
+    else:
+        savefigure_path = savefigure_path+".png"
+    savefigure_path = args.image_save_folder+savefigure_path
+    print("IMAGE SAVED AT: ", savefigure_path)
     generate_plot(savefigure_path, points)
 
 if __name__ == "__main__":
@@ -277,7 +272,7 @@ if __name__ == "__main__":
     parser.add_argument('--presaved_entropy', type=str, default='')
     parser.add_argument('--image_save_folder', type=str, default="data/img/")
     parser.add_argument('--new_entropy', type=bool, default=True)
+    parser.add_argument('--drop_port', type=bool, default=False)
     args = parser.parse_args()
     args = padronize_inputs(args)
-    print(args)
     main(args)
