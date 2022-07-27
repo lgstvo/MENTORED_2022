@@ -13,7 +13,7 @@ def fetch_package_csv_modified(presaved_packets, window_size, dataset):
         print("Processing {}...".format(packet_file))
         fraction_csv = pd.read_csv(os.path.join(presaved_packets, packet_file))
         entropy_dframe = entropy_dataframe(fraction_csv, window_size, dataset)
-        entropy_dframe.to_csv("data/{}/csvs/entropy/window{}/entropy_{}_{}_window{}.csv".format(CAPTURE, window_size, CAPTURE, packet_file.split('.')[0][-1], window_size))
+        entropy_dframe.to_csv("data/{}/csvs/new_entropy/window{}/entropy_{}_{}_window{}.csv".format(CAPTURE, window_size, CAPTURE, packet_file.split('.')[0][-1], window_size))
 
     print("Fetching complete.")
 
@@ -32,7 +32,7 @@ def compact_entropy_csv(presaved_entropies, window_size):
 def main(args):
     window_size = args.window_size
     presaved_packets = "data/{}/csvs/packets/".format(CAPTURE)
-    presaved_entropies = "data/{}/csvs/entropy/window{}/".format(CAPTURE, window_size)
+    presaved_entropies = "data/{}/csvs/new_entropy/window{}/".format(CAPTURE, window_size)
     if not os.path.exists(presaved_entropies):
         os.mkdir(presaved_entropies)
 
