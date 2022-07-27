@@ -220,9 +220,14 @@ def padronize_inputs(args):
 
     return args
 
-def separate_time(pps, start, end, window, entropy_dframe):
-    start_capture = pps*start//window
+def separate_time(pps, start, end, window, entropy_dframe, point_window):
     cut_capture = pps*end//window
+    if start == 0:
+        start_capture = cut_capture-point_window
+        if start_capture < 0:
+            start_capture = 0
+    else:
+        start_capture = pps*start//window
     entropy_dframe = entropy_dframe[start_capture:cut_capture]
     return entropy_dframe
 
@@ -241,14 +246,19 @@ def main(args):
 
     if args.time_cut != -1:
         savefigure_path = savefigure_path+"_start{}_end{}".format(args.time_startpoint, args.time_cut)
-        entropy_dframe = separate_time(2460, args.time_startpoint, args.time_cut, args.slice_window. entropy_dframe)
+        #pps = len(dframe)//973
+        pps = 2460
+        entropy_dframe = separate_time(pps, args.time_startpoint, args.time_cut, args.slice_window, entropy_dframe, args.point_window)
     else:
         savefigure_path = savefigure_path+"_pktAll"
         
     savefigure_path = savefigure_path+"_windowSize{}".format(args.slice_window)
     if args.drop_port == True:
+        print(entropy_dframe)                  
         entropy_dframe = entropy_dframe.drop(['Destination_Port', 'Source_Port'], axis=1)
+        print(entropy_dframe)
         savefigure_path = savefigure_path + "_dropport"
+    print(entropy_dframe["Infected"].value_counts())
     points = generate_PCA(entropy_dframe)
     if args.new_entropy == True:
         savefigure_path = savefigure_path+"_new_entropy.png"
@@ -273,6 +283,7 @@ if __name__ == "__main__":
     parser.add_argument('--image_save_folder', type=str, default="data/img/")
     parser.add_argument('--new_entropy', type=bool, default=True)
     parser.add_argument('--drop_port', type=bool, default=False)
+    parser.add_argument('--point_window', type=int, default=2000)
     args = parser.parse_args()
     args = padronize_inputs(args)
     main(args)
