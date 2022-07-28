@@ -118,7 +118,7 @@ def capture_packages(pcap_file_name, packet_count):
     print("Number of packages captured: ", len(pk_sh))
     return dframe
 
-def entropy_window(dframe_slice):
+def entropy_window(dframe_slice, dataset):
     # calls scipy.entropy to calculate the entropy in the slice per usuable column
     entropy_dframe_row = []
     dframe_raw = dframe_slice.to_numpy().transpose()
@@ -138,8 +138,15 @@ def entropy_window(dframe_slice):
         "Length": [entropy_dframe_row[4]]
     }
     entropy_dframe_row = pd.DataFrame(dframe_model)
-    
-    return entropy_dframe_row
+
+    infected_hosts = check_infected_hosts(dataset)
+    ih_count = 0
+    for value in dframe_raw[0]:
+        for ih in infected_hosts:
+            if value == int(ih.replace(".","")):
+                ih_count += 1
+
+    return entropy_dframe_row, ih_count/len(dframe_raw[0])
 
 def check_botnet(ip, botnets):
     ip_is_infected = 0
@@ -177,15 +184,17 @@ def entropy_dataframe(dframe, slice_window, dataset):
         dframe_slice = dframe[initial_index : ending_index]
         infected_hosts = check_infected_hosts(dataset)
         is_infected = check_infection(dframe_slice, infected_hosts)
-        entropy_dframe_row = entropy_window(dframe_slice[["Source_int", "Destination_int", "Source_Port", "Destination_Port", "Length"]])
+        entropy_dframe_row, infected_packets_rate = entropy_window(dframe_slice[["Source_int", "Destination_int", "Source_Port", "Destination_Port", "Length"]], dataset)
         entropy_dframe_row["Infected"] = is_infected
+        entropy_dframe_row["IH_Rate"] = infected_packets_rate
         entropy_dframe = pd.concat([entropy_dframe, entropy_dframe_row], ignore_index=True, axis=0)
 
     return entropy_dframe
 
 def generate_PCA(entropy_dframe):
     # creates PCA points for the data
-    entropy_dframe_numpy = entropy_dframe.loc[:, entropy_dframe.columns!='Infected'].to_numpy()
+    entropy_dframe_numpy = entropy_dframe.loc[:, entropy_dframe.columns!='Infected']
+    entropy_dframe_numpy = entropy_dframe_numpy.loc[:, entropy_dframe_numpy.columns!='IH_Rate'].to_numpy()
     pca = PCA(n_components = 2)
     pca.fit(entropy_dframe_numpy.transpose())
     pca_points = pca.components_
@@ -260,6 +269,11 @@ def main(args):
         savefigure_path = savefigure_path + "_dropport"
     print(entropy_dframe["Infected"].value_counts())
     points = generate_PCA(entropy_dframe)
+    ihrate = entropy_dframe["IH_Rate"].to_numpy()
+    mean_ihrate = np.delete(ihrate, np.where(ihrate == 0.0))
+    mean_ihrate = sum(mean_ihrate)/len(mean_ihrate)
+    print(mean_ihrate)
+
     if args.new_entropy == True:
         savefigure_path = savefigure_path+"_new_entropy.png"
     else:

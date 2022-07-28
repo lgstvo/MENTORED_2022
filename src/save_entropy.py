@@ -19,7 +19,7 @@ def fetch_package_csv_modified(presaved_packets, window_size, dataset):
 
 def compact_entropy_csv(presaved_entropies, window_size):
     list_csvs = sorted(os.listdir(presaved_entropies))
-    dframe = pd.DataFrame(columns=['Source_int', 'Destination_int', "Source_Port", "Destination_Port", "Length", "Infected"])
+    dframe = pd.DataFrame(columns=['Source_int', 'Destination_int', "Source_Port", "Destination_Port", "Length", "Infected", "IH_Rate"])
     for packet_file in list_csvs:
         print("Processing {}...".format(packet_file))
         fraction_csv = pd.read_csv(os.path.join(presaved_entropies, packet_file))
