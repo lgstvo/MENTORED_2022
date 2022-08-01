@@ -4,61 +4,9 @@ import pyshark
 import argparse
 import numpy as np
 import pandas as pd
-import seaborn as sns
-from math import floor
 import scipy.stats as scipy
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# CAPTURE 45
-# - Infected hosts
-#     - 147.32.84.165: Windows XP (English version) Name: SARUMAN (Label: Botnet) (amount of infected flows: 5160)
-# - Normal hosts:
-#     - 147.32.84.170 (amount of bidirectional flows: 12133, Label: Normal-V42-Stribrek)
-#     - 147.32.84.134 (amount of bidirectional flows: 10382, Label: Normal-V42-Jist)
-#     - 147.32.84.164 (amount of bidirectional flows: 2474, Label: Normal-V42-Grill)
-#     - 147.32.87.36 (amount of bidirectional flows: 89, Label: CVUT-WebServer. This normal host is not so reliable since is a webserver)
-#     - 147.32.80.9 (amount of bidirectional flows: 13, Label: CVUT-DNS-Server. This normal host is not so reliable since is a dns server)
-#     - 147.32.87.11 (amount of bidirectional flows: 4, Label: MatLab-Server. This normal host is not so reliable since is a matlab server)
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# CAPTURE 51
-# - Infected hosts
-#     - 147.32.84.165: Windows XP English version Name: SARUMAN. Label: Botnet. Amount of bidirectional flows: 9579
-#     - 147.32.84.191: Windows XP English version Name: SARUMAN1. Label: Botnet. Amount of bidirectional flows: 10454
-#     - 147.32.84.192: Windows XP English version Name: SARUMAN2. Label: Botnet. Amount of bidirectional flows: 10397
-#     - 147.32.84.193: Windows XP English version Name: SARUMAN3. Label: Botnet. Amount of bidirectional flows: 10009
-#     - 147.32.84.204: Windows XP English version Name: SARUMAN4. Label: Botnet. Amount of bidirectional flows: 11159
-#     - 147.32.84.205: Windows XP English version Name: SARUMAN5. Label: Botnet. Amount of bidirectional flows: 11874
-#     - 147.32.84.206: Windows XP English version Name: SARUMAN6. Label: Botnet. Amount of bidirectional flows: 11287
-#     - 147.32.84.207: Windows XP English version Name: SARUMAN7. Label: Botnet. Amount of bidirectional flows: 10581
-#     - 147.32.84.208: Windows XP English version Name: SARUMAN8. Label: Botnet. Amount of bidirectional flows: 11118
-#     - 147.32.84.209: Windows XP English version Name: SARUMAN9. Label: Botnet. Amount of bidirectional flows: 9894
-# - Normal hosts:
-#     - 147.32.84.170 (amount of bidirectional flows: 10216, Label: Normal-V42-Stribrek)
-#     - 147.32.84.134 (amount of bidirectional flows: 1091, Label: Normal-V42-Jist)
-#     - 147.32.84.164 (amount of bidirectional flows: 3728, Label: Normal-V42-Grill)
-#     - 147.32.87.36 (amount of bidirectional flows: 99, Label: CVUT-WebServer. This normal host is not so reliable since is a webserver)
-#     - 147.32.80.9 (amount of bidirectional flows: 651, Label: CVUT-DNS-Server. This normal host is not so reliable since is a dns server)
-#     - 147.32.87.11 (amount of bidirectional flows: 4, Label: MatLab-Server. This normal host is not so reliable since is a matlab server)
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# CAPTURE 52
-# - Infected hosts
-#     - 147.32.84.165: Windows XP English version Name: SARUMAN. Label: Botnet. Amount of bidirectional flows: 4151
-#     - 147.32.84.191: Windows XP English version Name: SARUMAN1. Label: Botnet. Amount of bidirectional flows: 4006
-#     - 147.32.84.192: Windows XP English version Name: SARUMAN2. Label: Botnet. Amount of bidirectional flows: 7
-# - Normal hosts:
-#     - 147.32.84.170 (amount of bidirectional flows: 581, Label: Normal-V42-Stribrek)
-#     - 147.32.84.134 (amount of bidirectional flows: 11, Label: Normal-V42-Jist)
-#     - 147.32.84.164 (amount of bidirectional flows: 2113, Label: Normal-V42-Grill)
-#     - 147.32.87.36 (amount of bidirectional flows: 1, Label: CVUT-WebServer. This normal host is not so reliable since is a webserver)
-#     - 147.32.80.9 (amount of bidirectional flows: 1, Label: CVUT-DNS-Server. This normal host is not so reliable since is a dns server)
-#     - 147.32.87.11 (amount of bidirectional flows: 2, Label: MatLab-Server. This normal host is not so reliable since is a matlab server)
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 INFECTED_HOSTS_C45 = ["147.32.84.165"]
 
@@ -187,6 +135,7 @@ def entropy_dataframe(dframe, slice_window, dataset):
         entropy_dframe_row, infected_packets_rate = entropy_window(dframe_slice[["Source_int", "Destination_int", "Source_Port", "Destination_Port", "Length"]], dataset)
         entropy_dframe_row["Infected"] = is_infected
         entropy_dframe_row["IH_Rate"] = infected_packets_rate
+        #entropy_dframe_row = entropy_dframe_row.append([entropy_dframe_row[entropy_dframe_row["Infected"] == True]]*2, ignore_index=True)
         entropy_dframe = pd.concat([entropy_dframe, entropy_dframe_row], ignore_index=True, axis=0)
 
     return entropy_dframe
@@ -255,8 +204,8 @@ def main(args):
 
     if args.time_cut != -1:
         savefigure_path = savefigure_path+"_start{}_end{}".format(args.time_startpoint, args.time_cut)
-        #pps = len(dframe)//973
-        pps = 2460
+        pps = len(dframe)//973
+        #pps = 2460
         entropy_dframe = separate_time(pps, args.time_startpoint, args.time_cut, args.slice_window, entropy_dframe, args.point_window)
     else:
         savefigure_path = savefigure_path+"_pktAll"
@@ -270,9 +219,9 @@ def main(args):
     print(entropy_dframe["Infected"].value_counts())
     points = generate_PCA(entropy_dframe)
     ihrate = entropy_dframe["IH_Rate"].to_numpy()
-    mean_ihrate = np.delete(ihrate, np.where(ihrate == 0.0))
-    mean_ihrate = sum(mean_ihrate)/len(mean_ihrate)
-    print(mean_ihrate)
+    #mean_ihrate = np.delete(ihrate, np.where(ihrate == 0.0))
+    #mean_ihrate = sum(mean_ihrate)/len(mean_ihrate)
+    #print(mean_ihrate)
 
     if args.new_entropy == True:
         savefigure_path = savefigure_path+"_new_entropy.png"
