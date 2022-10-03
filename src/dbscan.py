@@ -4,6 +4,7 @@ import pyshark
 import argparse
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import scipy.stats as scipy
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
@@ -42,7 +43,7 @@ def get_port(info_str:str):
 
 def capture_packages(pcap_file_name, packet_count):
     pk_sh = pyshark.FileCapture(pcap_file_name, only_summaries=True)
-    pk_sh.load_packets(packet_count=packet_count)
+    pk_sh.load_packets()
     dframe = pd.DataFrame(columns=['No', 'Time', 'Protocol', 'Source', 'Source_int', 'Destination', 'Destination_int', 'Length', "Source_Port", "Destination_Port", 'Info'])
     
     for index, packet in enumerate(pk_sh):
@@ -78,15 +79,6 @@ def entropy_window(dframe_slice, dataset):
             feature_entropy = -5
         entropy_dframe_row.append(feature_entropy)
 
-    dframe_model = {
-        "Source_int": [entropy_dframe_row[0]],
-        "Destination_int": [entropy_dframe_row[1]],
-        "Source_Port": [entropy_dframe_row[2]],
-        "Destination_Port": [entropy_dframe_row[3]],
-        "Length": [entropy_dframe_row[4]]
-    }
-    entropy_dframe_row = pd.DataFrame(dframe_model)
-
     infected_hosts = check_infected_hosts(dataset)
     ih_count = 0
     for value in dframe_raw[0]:
@@ -94,7 +86,20 @@ def entropy_window(dframe_slice, dataset):
             if value == int(ih.replace(".","")):
                 ih_count += 1
 
-    return entropy_dframe_row, ih_count/len(dframe_raw[0])
+    ih_rate = ih_count/len(dframe_raw[0])
+    mean_entropy = np.mean(entropy_dframe_row[0])
+
+    dframe_model = {
+        "Source_int": [entropy_dframe_row[0]],
+        "Destination_int": [entropy_dframe_row[1]],
+        "Source_Port": [entropy_dframe_row[2]],
+        "Destination_Port": [entropy_dframe_row[3]],
+        "Length": [entropy_dframe_row[4]],
+        "IH_Rate": ih_rate,
+        "Mean_S_entropy": mean_entropy
+    }
+    entropy_dframe_row = pd.DataFrame(dframe_model)
+    return entropy_dframe_row
 
 def check_botnet(ip, botnets):
     ip_is_infected = 0
@@ -132,9 +137,8 @@ def entropy_dataframe(dframe, slice_window, dataset):
         dframe_slice = dframe[initial_index : ending_index]
         infected_hosts = check_infected_hosts(dataset)
         is_infected = check_infection(dframe_slice, infected_hosts)
-        entropy_dframe_row, infected_packets_rate = entropy_window(dframe_slice[["Source_int", "Destination_int", "Source_Port", "Destination_Port", "Length"]], dataset)
+        entropy_dframe_row = entropy_window(dframe_slice[["Source_int", "Destination_int", "Source_Port", "Destination_Port", "Length"]], dataset)
         entropy_dframe_row["Infected"] = is_infected
-        entropy_dframe_row["IH_Rate"] = infected_packets_rate
         #entropy_dframe_row = entropy_dframe_row.append([entropy_dframe_row[entropy_dframe_row["Infected"] == True]]*2, ignore_index=True)
         entropy_dframe = pd.concat([entropy_dframe, entropy_dframe_row], ignore_index=True, axis=0)
 
@@ -143,6 +147,7 @@ def entropy_dataframe(dframe, slice_window, dataset):
 def generate_PCA(entropy_dframe):
     # creates PCA points for the data
     entropy_dframe_numpy = entropy_dframe.loc[:, entropy_dframe.columns!='Infected']
+    entropy_dframe_numpy = entropy_dframe_numpy.loc[:, entropy_dframe_numpy.columns!='Mean_S_entropy']
     entropy_dframe_numpy = entropy_dframe_numpy.loc[:, entropy_dframe_numpy.columns!='IH_Rate'].to_numpy()
     pca = PCA(n_components = 2)
     pca.fit(entropy_dframe_numpy.transpose())
@@ -218,17 +223,37 @@ def main(args):
         savefigure_path = savefigure_path + "_dropport"
     print(entropy_dframe["Infected"].value_counts())
     points = generate_PCA(entropy_dframe)
-    ihrate = entropy_dframe["IH_Rate"].to_numpy()
+    #ihrate = entropy_dframe["IH_Rate"].to_numpy()
     #mean_ihrate = np.delete(ihrate, np.where(ihrate == 0.0))
-    #mean_ihrate = sum(mean_ihrate)/len(mean_ihrate)
+    #mean_ihrate = np.mean(mean_ihrate)
     #print(mean_ihrate)
 
+    #a = min(entropy_dframe["Mean_S_entropy"])
+    #b = max(entropy_dframe["Mean_S_entropy"])
+    #print(a)
+    #print(b)
+    #print(b-a)
+    #print()
+    #c = entropy_dframe.loc[entropy_dframe["Infected"] == True, "Mean_S_entropy"]
+    #d = max(c)
+    #c = min(c)
+    #print(c)
+    #print(d)
+    #print(d-c)
+    
+    #sns.distplot(entropy_dframe["Mean_S_entropy"], hist=True, kde=True, bins=int(180/5), color = 'darkblue', hist_kws={'edgecolor':'black'}, kde_kws={'linewidth': 4})
+    #plt.show()
     if args.new_entropy == True:
         savefigure_path = savefigure_path+"_new_entropy.png"
     else:
         savefigure_path = savefigure_path+".png"
     savefigure_path = args.image_save_folder+savefigure_path
     print("IMAGE SAVED AT: ", savefigure_path)
+    is_infected = entropy_dframe["Infected"]
+    entropy_length = entropy_dframe["Length"]
+    entropy_ipO = entropy_dframe["Source_int"]
+    entropy_ipD = entropy_dframe["Destination_int"]
+    points = [entropy_ipO, entropy_length, is_infected]
     generate_plot(savefigure_path, points)
 
 if __name__ == "__main__":

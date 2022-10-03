@@ -12,6 +12,13 @@ def fetch_package_csv_modified(presaved_packets, window_size, dataset):
     for packet_file in list_csvs:
         print("Processing {}...".format(packet_file))
         fraction_csv = pd.read_csv(os.path.join(presaved_packets, packet_file))
+        fraction_csv = fraction_csv[fraction_csv.Source_int != "147.32.84.170"]
+        fraction_csv = fraction_csv[fraction_csv.Source_int != "147.32.96.69"]
+        fraction_csv = fraction_csv[fraction_csv.Source_int != "147.32.84.134"]
+        fraction_csv = fraction_csv[fraction_csv.Source_int != "147.32.84.164"]
+        fraction_csv = fraction_csv[fraction_csv.Source_int != "147.32.87.36"]
+        fraction_csv = fraction_csv[fraction_csv.Source_int != "147.32.80.9"]
+        fraction_csv = fraction_csv[fraction_csv.Source_int != "147.32.87.11"]
         entropy_dframe = entropy_dataframe(fraction_csv, window_size, dataset)
         entropy_dframe.to_csv("data/{}/csvs/new_entropy/window{}/entropy_{}_{}_window{}.csv".format(CAPTURE, window_size, CAPTURE, packet_file.split('.')[0][-1], window_size))
 
@@ -19,7 +26,7 @@ def fetch_package_csv_modified(presaved_packets, window_size, dataset):
 
 def compact_entropy_csv(presaved_entropies, window_size):
     list_csvs = sorted(os.listdir(presaved_entropies))
-    dframe = pd.DataFrame(columns=['Source_int', 'Destination_int', "Source_Port", "Destination_Port", "Length", "Infected", "IH_Rate"])
+    dframe = pd.DataFrame(columns=['Source_int', 'Destination_int', "Source_Port", "Destination_Port", "Length", "Infected", "IH_Rate", "Mean_S_entropy"])
     for packet_file in list_csvs:
         print("Processing {}...".format(packet_file))
         fraction_csv = pd.read_csv(os.path.join(presaved_entropies, packet_file))
