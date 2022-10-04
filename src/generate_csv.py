@@ -21,10 +21,10 @@ def get_port(info_str:str):
     
     return ports
 
-def capture_packages(file_name):
+def capture_packages(file_name, file_number):
     pk_sh = pyshark.FileCapture(file_name, only_summaries=True)
     pk_sh.load_packets()
-    dframe = pd.DataFrame(columns=['Protocol', 'Source', 'Source_int', 'Destination', 'Destination_int', 'Length', "Source_Port", "Destination_Port", 'Info'])
+    dframe = pd.DataFrame(columns=['Protocol', 'Source', 'Source_int', 'Destination', 'Destination_int', 'Length', "Source_Port", "Destination_Port", 'Info', "point_id"])
     
     for index, packet in enumerate(pk_sh):
         ports = get_port(packet.info)
@@ -38,7 +38,8 @@ def capture_packages(file_name):
                 'Length': [int(packet.length)], 
                 "Source_Port": [ports[0]], 
                 "Destination_Port": [ports[1]], 
-                'Info': [packet.info]
+                'Info': [packet.info],
+                "point_id": file_number
                 })
         except ValueError:
             continue
@@ -57,8 +58,9 @@ if __name__ == "__main__":
     parser.add_argument('--folder', type=str, default="capture45")
     args = parser.parse_args()
     packages_folder = "../data/"+args.folder
-    dframe = pd.DataFrame(columns=['Protocol', 'Source', 'Source_int', 'Destination', 'Destination_int', 'Length', "Source_Port", "Destination_Port", 'Info'])
+    dframe = pd.DataFrame(columns=['Protocol', 'Source', 'Source_int', 'Destination', 'Destination_int', 'Length', "Source_Port", "Destination_Port", 'Info','point_id'])
     file_number = 0
+    point_id = 0
     sorted_files = sorted(os.listdir(packages_folder))
     for file in sorted_files:
         if file.endswith(".pcap"):
@@ -67,7 +69,7 @@ if __name__ == "__main__":
                 continue
             print(file)
             file_path = os.path.join(packages_folder, file)
-            dframe_batch = capture_packages(file_path)
+            dframe_batch = capture_packages(file_path, point_id)
 
             with open("checkpoint.txt", "w") as file_checkpoint:
                 file_checkpoint.write(file)
@@ -75,5 +77,6 @@ if __name__ == "__main__":
             dframe = pd.concat([dframe, dframe_batch], ignore_index=True, axis=0)
             print(len(dframe))
             dframe.to_csv("{}_packets_csv.csv".format("./c52"))
+            point_id += 1
         
     print(dframe.head())
