@@ -10,10 +10,11 @@ class Clustering():
     
     def __init__(self, data_csv):
         self.dataset = data_csv
+        self.__defineGT__(["147.32.84.165", "147.32.84.191", "147.32.84.192"])
         self.dataset = self.process_entropy()
         self.__compute_PCA__()
         self.clust_alg = None
-        
+
     def __feature_select__(self):
         self.dataset = self.dataset[["Source_int", "Destination_int", "Source_Port", "Destination_Port", "Length", "point_id"]]
     
@@ -22,6 +23,19 @@ class Clustering():
         pca = PCA(n_components = 2)
         pca.fit(data.transpose())
         self.pca_points = pca.components_.transpose()
+
+    def __defineGT__(self, botnets):
+        n_points_total = self.dataset["point_id"].values[-1]
+        infected_list = []
+        for point in range(n_points_total+1):
+            infected = 0
+            source_ips = self.dataset[self.dataset["point_id"] == point]["Source"]
+            for ip in source_ips:
+                for bot in botnets:
+                    if ip == bot:
+                        infected = 1
+            infected_list.append(infected)
+        self.infected = infected_list
 
     def process_entropy(self):
         self.__feature_select__()
@@ -80,4 +94,9 @@ class Clustering():
         clusters = self.clust_alg.fit_predict(self.pca_points)
         plt.scatter(self.pca_points[:, 0], self.pca_points[:, 1], c=clusters)
         plt.savefig("./{}.png".format(self.method))
+        plt.close()
+
+    def ground_truth(self):
+        plt.scatter(self.pca_points[:, 0], self.pca_points[:, 1], c=self.infected)
+        plt.savefig("./GT.png")
         plt.close()
