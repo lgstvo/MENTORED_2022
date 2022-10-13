@@ -13,7 +13,7 @@ class Clustering():
         self.__defineGT__(["147.32.84.165", "147.32.84.191", "147.32.84.192"])
         self.dataset = self.process_entropy()
         self.__compute_PCA__()
-        self.clust_alg = None
+        self.__clust_alg = None
 
     def __feature_select__(self):
         self.dataset = self.dataset[["Source_int", "Destination_int", "Source_Port", "Destination_Port", "Length", "point_id"]]
@@ -62,41 +62,63 @@ class Clustering():
         print(entropy_dframe)
         return entropy_dframe
 
-    def load_kmeans(self, n_clusters=2, random_state=0):
-        self.clust_alg = KMeans(n_clusters=n_clusters, random_state=random_state)
-        self.method = "KMeans"
+    def __load_kmeans__(self, n_clusters=2, random_state=0):
+        self.__clust_alg = KMeans(n_clusters=n_clusters, random_state=random_state)
 
-    def load_dbscan(self, eps=0.005, min_samples=50):
-        self.clust_alg = DBSCAN(eps=eps, min_samples=min_samples)
-        self.method = "DBSCAN"
+    def __load_dbscan__(self, eps=0.01, min_samples=40):
+        self.__clust_alg = DBSCAN(eps=eps, min_samples=min_samples)
 
-    def load_som(self, m=2, n=1, dim=2):
-        self.clust_alg = SOM(m=m, n=n, dim=dim)
-        self.method = "SOM"
+    def __load_som__(self, m=1, n=2, dim=2):
+        self.__clust_alg = SOM(m=m, n=n, dim=dim)
 
-    def load_birch(self, n_clusters=2):
-        self.clust_alg = Birch(n_clusters=n_clusters)
-        self.method = "Birch"
+    def __load_birch__(self, n_clusters=2):
+        self.__clust_alg = Birch(n_clusters=n_clusters, threshold=0.01)
 
-    def load_ward(self, n_clusters=2):
-        self.clust_alg = AgglomerativeClustering(n_clusters=n_clusters)
-        self.method = "Ward"
+    def __load_ward__(self, n_clusters=2):
+        self.__clust_alg = AgglomerativeClustering(n_clusters=n_clusters)
 
-    def load_spectral(self, n_clusters=2, random_state=0):
-        self.clust_alg = SpectralClustering(n_clusters=n_clusters, random_state=random_state)
-        self.method = "Spectral"
+    def __load_spectral__(self, n_clusters=2, random_state=0):
+        self.__clust_alg = SpectralClustering(n_clusters=n_clusters, random_state=random_state)
 
-    def clusterize(self):
-        if self.clust_alg == None:
+    def clusterize(self, title_str, t=-1):
+        if self.__clust_alg == None:
             print("Please define clustering algorithm.")
             return
 
-        clusters = self.clust_alg.fit_predict(self.pca_points)
-        plt.scatter(self.pca_points[:, 0], self.pca_points[:, 1], c=clusters)
-        plt.savefig("./{}.png".format(self.method))
+        if t != -1:
+            pts = self.pca_points[:t]
+        else:
+            pts = self.pca_points
+        
+        clusters = self.__clust_alg.fit_predict(pts)
+        
+        plt.scatter(pts[:, 0], pts[:, 1], c=clusters)
+        plt.savefig("./{}_{}.png".format(title_str, self.method))
         plt.close()
 
-    def ground_truth(self):
-        plt.scatter(self.pca_points[:, 0], self.pca_points[:, 1], c=self.infected)
-        plt.savefig("./GT.png")
+    def ground_truth(self, title_str, t=-1):
+        if t != -1:
+            pts = self.pca_points[:t]
+            infected = self.infected[:t]
+        else:
+            pts = self.pca_points
+            infected = self.infected
+
+        plt.scatter(pts[:, 0], pts[:, 1], c=infected)
+        plt.savefig("./{}_GT.png".format(title_str))
         plt.close()
+
+    def load_method(self, method):
+        self.method = method
+        if method == "KMeans":
+            self.__load_kmeans__()
+        elif method == "DBSCAN":
+            self.__load_dbscan__()
+        elif method == "SOM":
+            self.__load_som__()
+        elif method == "Birch":
+            self.__load_birch__()
+        elif method == "Ward":
+            self.__load_ward__()
+        elif method == "Spectral":
+            self.__load_spectral__()
