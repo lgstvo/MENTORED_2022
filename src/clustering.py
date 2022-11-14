@@ -8,10 +8,13 @@ import matplotlib.pyplot as plt
 
 class Clustering():
     
-    def __init__(self, data_csv):
+    def __init__(self, data_csv, dataset, infected):
         self.dataset = data_csv
-        self.__defineGT__(["147.32.84.165", "147.32.84.191", "147.32.84.192"])
-        self.dataset = self.process_entropy()
+        if dataset == "capture52":
+            self.__defineGT__(["147.32.84.165", "147.32.84.191", "147.32.84.192"])
+            self.dataset = self.process_entropy()
+        elif dataset == "capture51":
+            self.infected = infected
         self.__compute_PCA__()
         self.__clust_alg = None
 
@@ -20,9 +23,12 @@ class Clustering():
     
     def __compute_PCA__(self):
         data = self.dataset.to_numpy()
-        pca = PCA(n_components = 2)
-        pca.fit(data.transpose())
+        pca = PCA(n_components = 3)
+        data = data.transpose()
+        pca.fit(data)
         self.pca_points = pca.components_.transpose()
+        print(self.pca_points)
+        exit()
 
     def __defineGT__(self, botnets):
         n_points_total = self.dataset["point_id"].values[-1]
@@ -65,7 +71,7 @@ class Clustering():
     def __load_kmeans__(self, n_clusters=2, random_state=0):
         self.__clust_alg = KMeans(n_clusters=n_clusters, random_state=random_state)
 
-    def __load_dbscan__(self, eps=0.01, min_samples=40):
+    def __load_dbscan__(self, eps=0.005, min_samples=40):
         self.__clust_alg = DBSCAN(eps=eps, min_samples=min_samples)
 
     def __load_som__(self, m=1, n=2, dim=2):
@@ -93,7 +99,7 @@ class Clustering():
         clusters = self.__clust_alg.fit_predict(pts)
         
         plt.scatter(pts[:, 0], pts[:, 1], c=clusters)
-        plt.savefig("./{}_{}.png".format(title_str, self.method))
+        plt.savefig("./img/{}_{}.png".format(title_str, self.method))
         plt.close()
 
     def ground_truth(self, title_str, t=-1):
@@ -105,7 +111,7 @@ class Clustering():
             infected = self.infected
 
         plt.scatter(pts[:, 0], pts[:, 1], c=infected)
-        plt.savefig("./{}_GT.png".format(title_str))
+        plt.savefig("./img/{}_GT.png".format(title_str))
         plt.close()
 
     def load_method(self, method):
