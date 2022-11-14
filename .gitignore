@@ -6,4 +6,4 @@ data/img/*
 *.csv
 *.pcap
 *.txt
-img/*
+src/img/*
