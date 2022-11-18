@@ -15,6 +15,9 @@ class Clustering():
             self.dataset = self.process_entropy()
         elif dataset == "capture51":
             self.infected = infected
+        elif dataset == "cic":
+            self.__defineGT__(["192.168.50.4"])
+            self.dataset = self.process_entropy()
         self.__compute_PCA__()
         self.__clust_alg = None
 
@@ -28,7 +31,7 @@ class Clustering():
         pca.fit(data)
         self.pca_points = pca.components_.transpose()
         print(self.pca_points)
-        exit()
+       
 
     def __defineGT__(self, botnets):
         n_points_total = self.dataset["point_id"].values[-1]
@@ -96,7 +99,7 @@ class Clustering():
         else:
             pts = self.pca_points
         
-        clusters = self.__clust_alg.fit_predict(pts)
+        clusters = self.__clust_alg.fit_predict(pts[:,:2])
         
         plt.scatter(pts[:, 0], pts[:, 1], c=clusters)
         plt.savefig("./img/{}_{}.png".format(title_str, self.method))
