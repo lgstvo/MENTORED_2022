@@ -1,5 +1,6 @@
 data/capture45/*.pcap
 data/capture51/*.pcap
+data/CIC/*
 
 src/__pycache__/*
 data/img/*
@@ -7,3 +8,4 @@ data/img/*
 *.pcap
 *.txt
 src/img/*
+src/img2/*
