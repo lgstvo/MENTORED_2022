@@ -2,9 +2,15 @@
 
 import os
 import pandas as pd
+import numpy as np
 import scipy.stats as scipy
 
 from dbscan import INFECTED_HOSTS_C51
+
+INFECTED_HOSTS_CIC = [
+    "192.168.50.1",
+    "192.168.50.4"
+]
 
 def load_c51(folder_path):
     sorted_files = sorted(os.listdir(folder_path))
@@ -32,7 +38,7 @@ def load_c51(folder_path):
             if column_name == '_ws.col.SA' or column_name == '_ws.col.DA':
                 for i, value in enumerate(data):
                     if column_name == '_ws.col.SA':
-                        if value in INFECTED_HOSTS_C51:
+                        if value in INFECTED_HOSTS_CIC:
                             infected = 1
                     try:
                         data[i] = int(value.replace('.', ''))
@@ -40,7 +46,7 @@ def load_c51(folder_path):
                         data[i] = 0
                         continue
             column_entropy = scipy.entropy(data)
-            if column_entropy <= 0:
+            if np.isnan(column_entropy):
                 column_entropy = 0
             entropy_features.append(column_entropy)
 
@@ -48,7 +54,7 @@ def load_c51(folder_path):
         dframe_model = {
             "Source_int":       [entropy_features[1]],
             "Destination_int":  [entropy_features[2]],
-            "Protocol":         [entropy_features[3]],
+            #"Protocol":         [entropy_features[3]],
             "Length":           [entropy_features[0]]
 
         }
@@ -60,4 +66,5 @@ def load_c51(folder_path):
     return entropy_dframe, infected_list
 
 if __name__ == "__main__":
-    load_c51("../data/capture51/csvs/capture_51_csv_parts/")
+    load_c51("../data/CIC/csvs/")
+    #load_c51("../data/capture51/csvs/capture_51_csv_parts/")

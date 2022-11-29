@@ -16,8 +16,9 @@ class Clustering():
         elif dataset == "capture51":
             self.infected = infected
         elif dataset == "cic":
-            self.__defineGT__(["192.168.50.4"])
-            self.dataset = self.process_entropy()
+            self.infected = infected
+            #self.__defineGT__(["192.168.50.4"])
+            #self.dataset = self.process_entropy()
         self.__compute_PCA__()
         self.__clust_alg = None
 
@@ -116,6 +117,73 @@ class Clustering():
         plt.scatter(pts[:, 0], pts[:, 1], c=infected)
         plt.savefig("./img/{}_GT.png".format(title_str))
         plt.close()
+    
+    def confusion_m(self, title_str, t=-1):
+        if t != -1:
+            pts = self.pca_points[:t]
+            infected = self.infected[:t]
+        else:
+            pts = self.pca_points
+            infected = self.infected
+
+        predicted = self.__clust_alg.fit_predict(pts[:,:2])
+
+        tp = 0
+        tn = 0
+        fp = 0
+        fn = 0
+        itp = 0
+        itn = 0
+        ifp = 0
+        ifn = 0
+
+        for index, value in enumerate(predicted):
+            gt = infected[index]
+
+            if gt == 0 and value == 0:
+                tn = tn + 1
+                ifn = ifn + 1
+            elif gt == 0 and value != 0:
+                fp = fp + 1
+                itp =  itp + 1
+            elif gt != 0 and value == 0:
+                fn = fn + 1
+                itn = itn + 1
+            elif gt != 0 and value != 0:
+                tp = tp + 1
+                ifp = ifp + 1
+
+        cm = [[tp, fp], [fn, tn]]
+        icm = [[itp, ifp], [ifn, itn]]
+
+        print("True Positive Rate: {}".format(tp/len(predicted)))
+        print("True Negative Rate: {}".format(tn/len(predicted)))
+        print("False Positive Rate: {}".format(fp/len(predicted)))
+        print("False Negative Rate: {}".format(fn/len(predicted)))
+
+        print("Inverted True Positive Rate: {}".format(itp/len(predicted)))
+        print("Inverted True Negative Rate: {}".format(itn/len(predicted)))
+        print("Inverted False Positive Rate: {}".format(ifp/len(predicted)))
+        print("Inverted False Negative Rate: {}".format(ifn/len(predicted)))
+
+        fig, ax = plt.subplots(figsize=(7.5,7.5))
+        ax.matshow(cm, cmap=plt.cm.Blues, alpha=0.3)
+        plt.xlabel('Predictions')
+        plt.ylabel('Actuals')
+        plt.title('Confusion Matrix')
+        plt.savefig("./img/{}_{}_CM.png".format(title_str, self.method))
+
+        fig, ax = plt.subplots(figsize=(7.5,7.5))
+        ax.matshow(icm, cmap=plt.cm.Blues, alpha=0.3)
+        plt.xlabel('Predictions')
+        plt.ylabel('Actuals')
+        plt.title('Confusion Matrix')
+        plt.savefig("./img/{}_{}_ICM.png".format(title_str, self.method))
+        plt.close()
+    
+
+        return cm, icm
+
 
     def load_method(self, method):
         self.method = method
