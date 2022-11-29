@@ -5,6 +5,8 @@ import pandas as pd
 from sklearn.decomposition import PCA
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
 
 class Clustering():
     
@@ -96,7 +98,7 @@ class Clustering():
             return
 
         if t != -1:
-            pts = self.pca_points[:t]
+            pts = self.pca_points[t-300:t]
         else:
             pts = self.pca_points
         
@@ -108,8 +110,8 @@ class Clustering():
 
     def ground_truth(self, title_str, t=-1):
         if t != -1:
-            pts = self.pca_points[:t]
-            infected = self.infected[:t]
+            pts = self.pca_points[t-300:t]
+            infected = self.infected[t-300:t]
         else:
             pts = self.pca_points
             infected = self.infected
@@ -120,8 +122,8 @@ class Clustering():
     
     def confusion_m(self, title_str, t=-1):
         if t != -1:
-            pts = self.pca_points[:t]
-            infected = self.infected[:t]
+            pts = self.pca_points[t-300:t]
+            infected = self.infected[t-300:t]
         else:
             pts = self.pca_points
             infected = self.infected
@@ -156,32 +158,47 @@ class Clustering():
         cm = [[tp, fp], [fn, tn]]
         icm = [[itp, ifp], [ifn, itn]]
 
-        print("True Positive Rate: {}".format(tp/len(predicted)))
-        print("True Negative Rate: {}".format(tn/len(predicted)))
-        print("False Positive Rate: {}".format(fp/len(predicted)))
-        print("False Negative Rate: {}".format(fn/len(predicted)))
+        #tpr = tp/(tp+fn)
+        #fpr = fp/(fp+tn)
+        #tnr = tn/(tn+fp)
+        #fnr = fn/(fn+tp)
+        #ppv = tp/(tp+fp)
+        #fdr = fp/(fp+tp)
+        #print("True Positive Prc: {}\n".format(tp/len(predicted)))
+        #print("True Negative Prc: {}\n".format(tn/len(predicted)))
+        #print("False Positive Prc: {}\n".format(fp/len(predicted)))
+        #print("False Negative Prc: {}\n".format(fn/len(predicted)))
+        #print("Recall: {}\n".format(tpr))
+        #print("Precision: {}\n".format(ppv))
+        #print("False Discovery Rate: {}\n".format(fdr))
+        
+        print(np.unique(predicted))
+        print(np.unique(infected))
+        print(confusion_matrix(infected, predicted))
+        print(classification_report(infected, predicted))
+        
+        #print("Positive Likelihodd: {}\n".format(tpr/fpr))
+        #print("Negative Likelihodd: {}\n".format(tnr/fnr))
 
-        print("Inverted True Positive Rate: {}".format(itp/len(predicted)))
-        print("Inverted True Negative Rate: {}".format(itn/len(predicted)))
-        print("Inverted False Positive Rate: {}".format(ifp/len(predicted)))
-        print("Inverted False Negative Rate: {}".format(ifn/len(predicted)))
-
-        fig, ax = plt.subplots(figsize=(7.5,7.5))
-        ax.matshow(cm, cmap=plt.cm.Blues, alpha=0.3)
+        # print("Inverted True Positive Rate: {}".format(itp/len(predicted)))
+        # print("Inverted True Negative Rate: {}".format(itn/len(predicted)))
+        # print("Inverted False Positive Rate: {}".format(ifp/len(predicted)))
+        # print("Inverted False Negative Rate: {}".format(ifn/len(predicted)))
+        '''
+        plt.plot(cm)
         plt.xlabel('Predictions')
         plt.ylabel('Actuals')
         plt.title('Confusion Matrix')
         plt.savefig("./img/{}_{}_CM.png".format(title_str, self.method))
 
-        fig, ax = plt.subplots(figsize=(7.5,7.5))
-        ax.matshow(icm, cmap=plt.cm.Blues, alpha=0.3)
+        plt.plot(icm)
         plt.xlabel('Predictions')
         plt.ylabel('Actuals')
-        plt.title('Confusion Matrix')
+        plt.title('Inverted Confusion Matrix')
         plt.savefig("./img/{}_{}_ICM.png".format(title_str, self.method))
         plt.close()
     
-
+        '''
         return cm, icm
 
 
