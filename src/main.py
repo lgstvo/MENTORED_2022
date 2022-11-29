@@ -3,13 +3,13 @@ import pandas as pd
 import time
 from dataloader import load_c51
 
-data = pd.read_csv("c52_packets_csv.csv")
+#data = pd.read_csv("c52_packets_csv.csv")
 #data , infected = load_c51("../data/capture51/csvs/capture_51_csv_parts/")
 #data = pd.read_csv("CIC_packets_csv.csv")
-#data , infected = load_c51("../data/CIC/csvs/")
+data , infected = load_c51("../data/CIC/csvs/")
 #clust = Clustering(data, dataset="capture51", infected=infected)
-#clust = Clustering(data, dataset="cic", infected=infected)
-clust = Clustering(data, dataset="capture52", infected=[])
+clust = Clustering(data, dataset="cic", infected=infected)
+#clust = Clustering(data, dataset="capture52", infected=[])
 
 methods = ["KMeans", "DBSCAN", "SOM", "Birch", "Ward", "Spectral"]
 
@@ -28,8 +28,8 @@ clust.ground_truth("Full")
 for method in methods:
     clust.load_method(method)
     print(method)
-    clust.clusterize("Attack", t=778+29)
-    clust.confusion_m("Full", t=778+29)
+    clust.clusterize("Attack")
+    clust.confusion_m("Full")
 '''
     for chkpnt, time_stamp in c51_checkpoints.items():
         t = time.time()
