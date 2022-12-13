@@ -24,12 +24,12 @@ c51_checkpoints={
     "icmp_end_1": 7949,
 }
 
-clust.ground_truth("Full")
+clust.ground_truth("portmap", t=300)
 for method in methods:
     clust.load_method(method)
     print(method)
-    clust.clusterize("Attack")
-    clust.confusion_m("Full")
+    clust.clusterize("portmap", t=300)
+    clust.confusion_m("portmap", t=300)
 '''
     for chkpnt, time_stamp in c51_checkpoints.items():
         t = time.time()
