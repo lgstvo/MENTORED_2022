@@ -6,7 +6,7 @@ from sklearn.decomposition import PCA
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, calinski_harabasz_score, silhouette_score, davies_bouldin_score
 
 class Clustering():
     
@@ -92,6 +92,15 @@ class Clustering():
     def __load_spectral__(self, n_clusters=2, random_state=0):
         self.__clust_alg = SpectralClustering(n_clusters=n_clusters, random_state=random_state)
 
+    def evaluate(self, pts, label):
+        calinski_harabasz = calinski_harabasz_score(pts, label)
+        silhouette = silhouette_score(pts, label)
+        davies_bouldin = davies_bouldin_score(pts, label)
+        
+        print("Davies Bouldin Socre: ", davies_bouldin)
+        print("Silhouette Score: ", silhouette)
+        print("Calinski Harabasz Score: ", calinski_harabasz)
+
     def clusterize(self, title_str, t=-1):
         if self.__clust_alg == None:
             print("Please define clustering algorithm.")
@@ -104,6 +113,7 @@ class Clustering():
         
         clusters = self.__clust_alg.fit_predict(pts[:,:2])
         
+        self.evaluate(pts, clusters)
         plt.scatter(pts[:, 0], pts[:, 1], c=clusters)
         plt.savefig("./img/{}_{}.png".format(title_str, self.method))
         plt.close()
@@ -119,7 +129,7 @@ class Clustering():
         plt.scatter(pts[:, 0], pts[:, 1], c=infected)
         plt.savefig("./img/{}_GT.png".format(title_str))
         plt.close()
-    
+
     def confusion_m(self, title_str, t=-1):
         if t != -1:
             pts = self.pca_points[t-300:t]

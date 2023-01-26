@@ -38,7 +38,7 @@ def load_c51(folder_path):
             if column_name == '_ws.col.SA' or column_name == '_ws.col.DA':
                 for i, value in enumerate(data):
                     if column_name == '_ws.col.SA':
-                        if value in INFECTED_HOSTS_CIC:
+                        if value in INFECTED_HOSTS_C51:
                             infected = 1
                     try:
                         data[i] = int(value.replace('.', ''))
